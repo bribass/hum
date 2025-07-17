@@ -1,8 +1,10 @@
-use std::error;
-use std::fmt::{Debug, Formatter};
+use std::error::Error;
+use std::fmt::Debug;
 use std::fs;
 use toml::Table;
 
+/// Encapsulate all information from a configuration file.
+#[derive(Debug)]
 pub struct Config {
     config: Table,
 }
@@ -17,7 +19,7 @@ impl Config {
     /// * `filename`: The filename of the configuration file.
     ///
     /// returns: `Result<Config, Box<dyn Error, Global>>`
-    pub fn from_file(filename: String) -> Result<Config, Box<dyn error::Error>> {
+    pub fn from_file(filename: String) -> Result<Config, Box<dyn Error>> {
         // Read in the config file
         let contents = fs::read_to_string(filename)?;
         let table = contents.parse::<Table>()?;
@@ -43,13 +45,5 @@ impl Config {
     pub fn verbs(&self) -> impl Iterator<Item = &String> {
         let verb_table = self.get_section("verb").unwrap();
         verb_table.keys()
-    }
-}
-
-impl Debug for Config {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Config")
-            .field("config", &self.config)
-            .finish()
     }
 }
