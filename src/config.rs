@@ -34,16 +34,19 @@ impl Config {
     ///
     /// * `name`: The name of the section to return.
     ///
-    /// returns: `Option<&Map<String, Value>>`
+    /// returns: `Option<&ConfigSection>`
     pub fn get_section(&self, name: &str) -> Option<&ConfigSection> {
-        self.config.get(name).unwrap().as_table()
+        self.config.get(name)?.as_table()
     }
 
-    /// Returns an `Iterator` that lists all verbs defined in the configuration file.
+    /// Return the section of the configuration for a given action.
     ///
-    /// returns: `impl Iterator<Item = &String>`
-    pub fn verbs(&self) -> impl Iterator<Item = &String> {
-        let verb_table = self.get_section("verb").unwrap();
-        verb_table.keys()
+    /// # Arguments
+    ///
+    /// * `name`: The name of the action to return.
+    ///
+    /// returns: `Option<&ConfigSection>`
+    pub fn action(&self, name: &str) -> Option<&ConfigSection> {
+        self.get_section("action")?.get(name)?.as_table()
     }
 }
