@@ -18,7 +18,7 @@ impl Config {
     ///
     /// * `filename`: The filename of the configuration file.
     ///
-    /// returns: `Result<Config, Box<dyn Error, Global>>`
+    /// returns: `Result<Config, Box<dyn Error>>`
     pub fn from_file(filename: String) -> Result<Config, Box<dyn Error>> {
         // Read in the config file
         let contents = fs::read_to_string(filename)?;
@@ -37,6 +37,13 @@ impl Config {
     /// returns: `Option<&ConfigSection>`
     pub fn get_section(&self, name: &str) -> Option<&ConfigSection> {
         self.config.get(name)?.as_table()
+    }
+
+    /// Returns an LDAP connection as determined by the "`ldap`" section of the configuration file.
+    ///
+    /// returns: unknown, but will be an LDAP connection object of some sort
+    pub fn ldap_connection(&self) -> Option<String> {
+        Some(self.get_section("ldap")?.to_string())
     }
 
     /// Return the section of the configuration for a given action.

@@ -1,7 +1,9 @@
-use config::Config;
-use std::{env, process};
+use std::{env, process, collections::HashMap};
+use crate::config::{Config, ConfigSection};
 
 mod config;
+mod http;
+mod ldap;
 
 fn main() {
     // Find the config file
@@ -26,7 +28,7 @@ fn main() {
             process::exit(1);
         }
     };
-    let action = match config.action(action_name.as_str()) {
+    let action_config = match config.action(action_name.as_str()) {
         Some(a) => a,
         None => {
             eprintln!("Error: Action '{action_name}' is not defined in the config file.");
@@ -35,7 +37,7 @@ fn main() {
     };
 
     // Determine the mode for the action
-    let action_mode = match action.get("mode") {
+    let action_mode = match action_config.get("mode") {
         Some(m) => m.as_str().unwrap_or_else(|| {
             eprintln!("Error: Action '{action_name}' does not define a 'mode' as a string.");
             process::exit(1);
@@ -45,7 +47,32 @@ fn main() {
             process::exit(1);
         }
     };
-    println!("{action_name} => {action_mode}");
+
+    // Dispatch to the correct mode
+    let modes = create_modes();
+    match modes.get(action_mode) {
+        Some(action) => {
+            action.do_action(&config, &action_config, &mut args);
+        }
+        None => {
+            eprintln!("Error: Mode '{action_mode}' defined in action '{action_name}' does not exist in the binary.");
+            process::exit(1);
+        }
+    };
 
     process::exit(0);
+}
+
+fn create_modes() -> HashMap<String, Box<dyn Action>> {
+    let mut modes = HashMap::<String, Box<dyn Action>>::new();
+
+    modes.insert("query".to_string(), Box::new(ldap::Query));
+    modes.insert("modify".to_string(), Box::new(ldap::Modify));
+    modes.insert("http".to_string(), Box::new(http::Http));
+
+    modes
+}
+
+trait Action {
+    fn do_action(&self, config: &Config, action_config: &ConfigSection, args: &mut env::Args);
 }
